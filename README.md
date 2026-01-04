@@ -1,6 +1,6 @@
 # FTC Scouting
 
-A scouting app for FTC teams. Based on [MergeData by FRC 2706](https://github.com/frc2706/mergedata) (which I also contributed to), but adapted to FTC questions.
+A scouting app for FTC teams. Based on [MergeData by FRC 2706](https://github.com/frc2706/mergedata), but adapted to FTC questions with a new UI.
 
 Screenshots:
 
