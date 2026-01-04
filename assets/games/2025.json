@@ -1,0 +1,95 @@
+{
+  "PreMatch": [
+    {
+      "name": "Scouter Name",
+      "required": true,
+      "type": "text"
+    },
+    {
+      "name": "Team #",
+      "required": true,
+      "type": "number"
+    },
+    {
+      "name": "Match #",
+      "required": true,
+      "type": "number"
+    },
+    {
+        "name": "Starting Postition",
+        "choices": ["At goal", "Back", "N/A"],
+        "required": false,
+        "type": "radio"
+    }
+  ],
+  "Autonomous": [
+    {
+      "name": "Moved",
+      "type": "bool"
+    },
+    {
+      "name": "Auto Goals (scored)",
+      "type": "counter"
+    },
+    {
+      "name": "Auto Artifacts Picked Up from Ground",
+      "type": "counter"
+    },
+    {
+      "name": "Missed Goals",
+      "type": "counter"
+    },
+    {
+      "name": "Comments on Auto",
+      "type": "text"
+    }
+  ],
+  "TeleOp": [
+    {
+      "name": "Artifacts Picked Up",
+      "type": "counter"
+    },
+    {
+      "name": "Goals (scored)",
+      "type": "counter"
+    },
+    {
+      "name": "Missed",
+      "type": "counter"
+    },
+    {
+      "name": "Can they sort artifacts for the motif?",
+      "type": "bool"
+    }
+  ],
+  "EndGame": [
+    {
+      "name": "Ending Position",
+      "type": "radio",
+      "required": false,
+      "choices": ["None", "Semi Park (not fully in box)", "Full Park (in box)", "Partial Double Park (two robots not fully in)", "Full Double Park (two robots fully in)", "Failed"]
+    }
+  ],
+  "PostMatch": [
+    {
+      "name": "Picked up from",
+      "type": "radio",
+      "required": true,
+      "choices": ["Ground", "Human Player", "Both"]
+    },
+    {
+      "name": "Did they die or tip over during the match?",
+      "type": "bool"
+    },
+    {
+      "name": "Penalities (if any)",
+      "type": "text",
+      "required": false
+    },
+        {
+      "name": "Comments",
+      "type": "text",
+      "required": false
+    }
+  ]
+}

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:gsheets/gsheets.dart';
 import 'package:http/http.dart' as http;
@@ -13,7 +12,7 @@ class SendData extends StatefulWidget {
   final bool justSend;
   final String api;
 
-  SendData(
+  const SendData(
       {Key? key,
       required this.data,
       required this.isGame,
@@ -35,14 +34,12 @@ class _SendDataState extends State<SendData> {
   late String _spreadsheetId;
   late String _gameWorksheetName;
   late String _pitWorksheetName;
-  late String _passcode;
 
   @override
   void initState() {
     super.initState();
     getLocalGames().then((_) {
-      setState(
-          () {}); //refresh, very unpracitical but this is a hotfix after all :P ...
+      setState(() {}); 
     });
   }
 
@@ -69,9 +66,11 @@ class _SendDataState extends State<SendData> {
     Map apiResponse = await fetchApi(apiKey);
 
     if (apiResponse.containsKey("Error")) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid or no API key entered')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid or no API key entered')),
+        );
+      }
     } else {
       _gsheets = GSheets(apiResponse["GOOGLE_SHEETS_DATA"]);
       _spreadsheetId = apiResponse["SPREADSHEET_ID"];
@@ -83,7 +82,7 @@ class _SendDataState extends State<SendData> {
   Future<void> saveDataLocally() async {
     final prefs = await SharedPreferences.getInstance();
     final savedGames = prefs.getStringList('savedGames') ?? [];
-    Map sillyData = {}; // silly way to avoid widget.data referenceing
+    Map sillyData = {}; 
     widget.data.forEach((k, v) => sillyData[k] = v);
     sillyData["isGame"] = widget.isGame ? "y" : "n";
     savedGames.add(jsonEncode(sillyData));
@@ -95,7 +94,7 @@ class _SendDataState extends State<SendData> {
 
     try {
       final ss = await _gsheets.spreadsheet(_spreadsheetId);
-      var sheet;
+      Worksheet? sheet;
       if (widget.isGame) {
         sheet = ss.worksheetByTitle(_gameWorksheetName);
       } else {
@@ -110,8 +109,8 @@ class _SendDataState extends State<SendData> {
         if (savedGames.isEmpty && widget.data.isEmpty) {
           message = "No saved games found.";
         } else {
-          if (widget.isGame) {
-            // Send locally stored games
+          // Send locally stored games
+          if (widget.isGame || widget.justSend) {
             for (final savedGame in savedGames) {
               Map gameData = jsonDecode(savedGame);
               var curSheet = ss.worksheetByTitle(_pitWorksheetName);
@@ -132,13 +131,12 @@ class _SendDataState extends State<SendData> {
               }
             }
             // Clear the saved games after sending them
-            final a = await prefs.setStringList('savedGames', []);
+            await prefs.setStringList('savedGames', []);
           }
 
           if (widget.data.values.isNotEmpty) {
             // Send current game
             final values = widget.data.values.toList();
-            print(values);
             final result = await sheet.values.appendRow(values);
             if (result) {
               message = 'Data sent succesfully, thank you!';
@@ -151,9 +149,11 @@ class _SendDataState extends State<SendData> {
       print(e);
     }
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-    Navigator.of(context).pop();
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -163,94 +163,115 @@ class _SendDataState extends State<SendData> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           return Scaffold(
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-              title: const Text("Send Data",
-                  style: TextStyle(color: Colors.black)),
-              actions: <Widget>[
-                IconButton(
-                  icon: const Icon(Icons.home),
-                  tooltip: 'Return to Home',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title:
-                              Text('Are you sure you want to return to home?'),
-                          content: Text(
-                              'All unsaved data will be sent to the shadow realm. If the page behind is blank anyway, no worries.',
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.red)),
-                          actions: [
-                            TextButton(
-                              child: Text('Yes'),
-                              onPressed: () {
-                                Navigator.of(context)
-                                    .popUntil((route) => route.isFirst);
-                              },
-                            ),
-                            TextButton(
-                              child: Text('No'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
+            body: CustomScrollView(
+              slivers: [
+                SliverAppBar.medium(
+                  title: const Text("Data Summary"),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Discard & Home',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Return to home?'),
+                              content: const Text(
+                                  'Unsaved data will be lost. Ensure you have saved or sent it.',
+                                  style: TextStyle(color: Colors.red)),
+                              actions: [
+                                TextButton(
+                                  child: const Text('Leave'),
+                                  onPressed: () {
+                                    Navigator.of(context)
+                                        .popUntil((route) => route.isFirst);
+                                  },
+                                ),
+                                TextButton(
+                                  child: const Text('Stay'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
-              ],
-            ),
-            body: ListView(
-              children: [
-                ...widget.data.entries.map((entry) {
-                  return ListTile(
-                    title: Text(entry.key),
-                    subtitle: Text(entry.value),
-                  );
-                }).toList(),
-                if (widget.justSend)
-                  for (var entry in savedGamesArray) ...[
-                    if (entry["isGame"] == "y") ...[
-                      Padding(
-                          padding: const EdgeInsets.only(top: 15, left: 15),
-                          child: Text(
-                            "Saved Data ${savedGamesArray.indexOf(entry) + 1} (Match)",
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          )),
-                    ] else ...[
-                      Padding(
-                          padding: const EdgeInsets.only(top: 15, left: 15),
-                          child: Text(
-                            "Saved Data ${savedGamesArray.indexOf(entry) + 1} (Pit)",
-                            style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          )),
-                    ],
-                    for (var gameValue in entry.entries) ...[
-                      if (gameValue.key != "isGame") ...[
-                        ListTile(
-                          title: Text(gameValue.key),
-                          subtitle: Text(gameValue.value),
-                        ),
-                      ]
-                    ]
+                    ),
                   ],
-                if (showQR)
-                  Center(
-                    child: QrImageView(
-                      data: dataString!,
-                      version: QrVersions.auto,
-                      size: 200.0,
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.data.isNotEmpty)
+                          _buildSectionTitle("Current Data"),
+                        if (widget.data.isNotEmpty)
+                          Card(
+                            child: Column(
+                              children: widget.data.entries.map((entry) {
+                                return ListTile(
+                                  title: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text(entry.value),
+                                  dense: true,
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        
+                        if (widget.justSend && savedGamesArray.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          _buildSectionTitle("Locally Saved Games"),
+                          ...savedGamesArray.map((entry) {
+                            int index = savedGamesArray.indexOf(entry) + 1;
+                            String type = entry["isGame"] == "y" ? "Match" : "Pit";
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: ExpansionTile(
+                                title: Text("Saved $type Data #$index"),
+                                children: [
+                                  for (var gameValue in entry.entries)
+                                    if (gameValue.key != "isGame")
+                                      ListTile(
+                                        title: Text(gameValue.key, style: const TextStyle(fontWeight: FontWeight.w500)),
+                                        subtitle: Text(gameValue.value.toString()),
+                                        dense: true,
+                                        visualDensity: VisualDensity.compact,
+                                      )
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                        
+                        if (showQR && dataString != null)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Card(
+                                elevation: 4,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: QrImageView(
+                                    data: dataString!,
+                                    version: QrVersions.auto,
+                                    size: 200.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        
+                        // Extra space for FABs
+                        const SizedBox(height: 100),
+                      ],
                     ),
                   ),
-                const Padding(
-                  padding: EdgeInsets.all(15),
-                )
+                ),
               ],
             ),
             floatingActionButton: Row(
@@ -259,48 +280,47 @@ class _SendDataState extends State<SendData> {
                 if (!showQR && !widget.justSend)
                   FloatingActionButton(
                     heroTag: "qr",
-                    child: Icon(Icons.qr_code),
+                    backgroundColor: Colors.grey.shade800,
+                    foregroundColor: Colors.white,
+                    child: const Icon(Icons.qr_code),
                     onPressed: () {
                       setState(() {
-                        Map tempData = {};
-                        for (MapEntry entry in widget.data.entries) {
-                          tempData[entry.key] = entry.value;
-                        }
+                        Map tempData = Map.from(widget.data);
                         tempData['isGame'] = widget.isGame ? "y" : "n";
                         dataString = jsonEncode(tempData);
                         showQR = true;
                       });
                     },
                   ),
-                SizedBox(width: 10), // Add some spacing between the buttons
+                const SizedBox(width: 12),
                 if (!widget.justSend)
                   FloatingActionButton(
                     heroTag: "archive",
-                    child: Icon(Icons.archive),
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    child: const Icon(Icons.save_alt),
                     onPressed: () {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            title: Text('Save data locally?'),
-                            content: Text(
-                                "The data will NOT be uploaded yet, but will be saved locally.\n"
-                                "You can send it later. JUST DON'T FORGET TO SEND IT!"),
+                            title: const Text('Save data locally?'),
+                            content: const Text(
+                                "Data will be saved to this device only. You must upload it later."),
                             actions: [
                               TextButton(
-                                child: Text('Yes'),
+                                child: const Text('Save'),
                                 onPressed: () {
                                   saveDataLocally();
                                   Navigator.of(context)
                                       .popUntil((route) => route.isFirst);
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text(
-                                              'Data saved locally, thanks scout!')));
+                                      const SnackBar(
+                                          content: Text('Data saved locally.')));
                                 },
                               ),
                               TextButton(
-                                child: Text('No'),
+                                child: const Text('Cancel'),
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
@@ -311,59 +331,52 @@ class _SendDataState extends State<SendData> {
                       );
                     },
                   ),
-
-                SizedBox(width: 10),
-                FloatingActionButton(
+                const SizedBox(width: 12),
+                FloatingActionButton.extended(
                   heroTag: "send",
-                  child: Icon(Icons.send),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.cloud_upload),
+                  label: const Text("Upload"),
                   onPressed: () {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: Text('Confirmation'),
-                          content: Text(
-                              'Make sure you have an internet connection to do this!'),
+                          title: const Text('Confirm Upload'),
+                          content: const Text(
+                              'Ensure you have an active internet connection.'),
                           actions: [
                             TextButton(
-                              child: Text('Send'),
+                              child: const Text('Upload'),
                               onPressed: () {
                                 Navigator.of(context).pop();
                                 showDialog(
                                   context: context,
                                   barrierDismissible: false,
                                   builder: (BuildContext context) {
-                                    return AlertDialog(
+                                    return const AlertDialog(
                                       content: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           CircularProgressIndicator(),
-                                          Text("We are collecting the data..."),
-                                          TextButton(
-                                            child: Text('Cancel'),
-                                            onPressed: () {
-                                              isCancelled = true;
-                                              Navigator.of(context).pop();
-                                            },
-                                          ),
+                                          SizedBox(height: 16),
+                                          Text("Uploading data..."),
                                         ],
                                       ),
                                     );
                                   },
                                 );
                                 sendDataToGoogleSheets().then((_) {
-                                  //send to google sheets, but authenticate first
-                                  if (!isCancelled) {
-                                    Navigator.of(context).pop();
+                                  if (!isCancelled && mounted) {
+                                     // Navigator handled in sendDataToGoogleSheets
                                   }
                                 });
                               },
                             ),
                             TextButton(
-                              child: Text('Cancel'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
+                              child: const Text('Cancel'),
+                              onPressed: () => Navigator.of(context).pop(),
                             ),
                           ],
                         );
@@ -375,15 +388,28 @@ class _SendDataState extends State<SendData> {
             ),
           );
         } else if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
+          return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         } else {
-          return Scaffold(
-            body: Center(child: Text('Error loading environment variables')),
+          return const Scaffold(
+            body: Center(child: Text('Error loading API configuration')),
           );
         }
       },
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade600),
+      ),
     );
   }
 }

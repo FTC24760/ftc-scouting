@@ -1,8 +1,6 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:ftc_scouting/screens/send_data.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
@@ -12,7 +10,7 @@ class ScanResultsPage extends StatefulWidget {
   final int year;
   final String api;
 
-  ScanResultsPage(
+  const ScanResultsPage(
       {Key? key, required this.title, required this.year, required this.api})
       : super(key: key);
 
@@ -39,35 +37,85 @@ class _ScanResultsPageState extends State<ScanResultsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Check for unsupported platforms
+    bool isDesktop = (kIsWeb ||
+        Theme.of(context).platform == TargetPlatform.linux ||
+        Theme.of(context).platform == TargetPlatform.macOS ||
+        Theme.of(context).platform == TargetPlatform.windows);
+
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title, style: const TextStyle(color: Colors.black)),
+        backgroundColor: Colors.transparent, // Floating effect
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Colors.white, 
+            shadows: [Shadow(color: Colors.black, blurRadius: 10)]
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            if (result != null) {
-              sendData(resultDataMap, isGame);
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("No QR code found!")));
-            }
-          },
-          child: const Icon(Icons.send)),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          if (result != null) {
+            sendData(resultDataMap, isGame);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("No QR code found!")));
+          }
+        },
+        label: const Text("Process Scan"),
+        icon: const Icon(Icons.arrow_forward),
+      ),
       body: Column(
         children: <Widget>[
           Expanded(
             flex: 5,
-            child: (kIsWeb ||
-                    Theme.of(context).platform == TargetPlatform.linux ||
-                    Theme.of(context).platform == TargetPlatform.macOS ||
-                    Theme.of(context).platform == TargetPlatform.windows)
+            child: isDesktop
                 ? Center(
-                    child: Text(
-                        'The camera function is only available on Android and iOS.'))
-                : QRView(
-                    key: qrKey,
-                    onQRViewCreated: _onQRViewCreated,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.videocam_off, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'Camera is only available on Android/iOS.',
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
+                : Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      QRView(
+                        key: qrKey,
+                        onQRViewCreated: _onQRViewCreated,
+                        overlay: QrScannerOverlayShape(
+                          borderColor: Theme.of(context).primaryColor,
+                          borderRadius: 10,
+                          borderLength: 30,
+                          borderWidth: 10,
+                          cutOutSize: 300,
+                        ),
+                      ),
+                      if (result != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 100),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            "Code Detected!",
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        )
+                    ],
                   ),
           ),
         ],
@@ -87,6 +135,7 @@ class _ScanResultsPageState extends State<ScanResultsPage> {
               decodedJson.map((key, value) => MapEntry(key, value.toString()));
           isGame = resultDataMap['isGame'] == "y" ? true : false;
           resultDataMap.remove("isGame");
+          setState(() {}); // Trigger rebuild to show "Code Detected" indicator
         } catch (e) {
           print('Error decoding JSON: $e');
         }

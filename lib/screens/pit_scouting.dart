@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'send_data.dart';
 
 class PitScoutingPage extends StatefulWidget {
-  PitScoutingPage(
+  const PitScoutingPage(
       {Key? key, required this.title, required this.year, required this.api})
       : super(key: key);
 
@@ -21,7 +21,6 @@ class _PitScoutingState extends State<PitScoutingPage> {
   Map<String, dynamic> formFields = {};
   Map<String, bool> fieldErrors = {};
   Map<String, String> textValues = {};
-  Map<String, String> numberValues = {};
 
   @override
   void initState() {
@@ -40,8 +39,10 @@ class _PitScoutingState extends State<PitScoutingPage> {
 
   bool validateRequiredFields() {
     bool allFieldsValid = true;
+    if (formFields['Pit'] == null) return true;
+
     for (var field in formFields['Pit']) {
-      if (field['required']) {
+      if (field['required'] == true) {
         if (field['type'] == 'radio' &&
             (radioValues[field['name']] == null ||
                 radioValues[field['name']]!.isEmpty)) {
@@ -67,8 +68,7 @@ class _PitScoutingState extends State<PitScoutingPage> {
             content:
                 Text('Please fill out all required fields before saving.')),
       );
-      setState(
-          () {}); // Trigger a rebuild to show error messages, feel free to refactor if there is a better way
+      setState(() {});
       return;
     }
 
@@ -83,7 +83,6 @@ class _PitScoutingState extends State<PitScoutingPage> {
               child: const Text('Prepare to send!'),
               onPressed: () {
                 Navigator.of(context).pop();
-                // redirect to `send_data.dart` and pass the data
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -95,7 +94,7 @@ class _PitScoutingState extends State<PitScoutingPage> {
               },
             ),
             TextButton(
-              child: const Text('No, not yet'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -108,6 +107,7 @@ class _PitScoutingState extends State<PitScoutingPage> {
 
   Map<String, String> getBunchValues() {
     Map<String, String> bunchValues = {};
+    if (formFields['Pit'] == null) return bunchValues;
 
     for (var item in formFields['Pit']) {
       if (item['type'] == "text" || item['type'] == "number") {
@@ -116,81 +116,96 @@ class _PitScoutingState extends State<PitScoutingPage> {
         bunchValues[item['name']] = radioValues[item['name']] ?? '';
       }
     }
-
     return bunchValues;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title, style: const TextStyle(color: Colors.black)),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar.medium(
+            title: Text(widget.title),
+          ),
+          if (formFields['Pit'] == null)
+            const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()))
+          else
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 80),
+                child: Card(
+                  // This wrapping Card gives it the "Section" look from Match Scouting
+                  margin: const EdgeInsets.all(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: List.generate(formFields['Pit'].length, (index) {
+                        var field = formFields['Pit'][index];
+                        return _buildField(field);
+                      }),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(8),
-        itemCount: formFields['Pit']?.length ?? 0,
-        itemBuilder: (BuildContext context, int index) {
-          var field = formFields['Pit'][index];
-          bool showError = fieldErrors[field['name']] ?? false;
-          if (field['type'] == 'number') {
-            return Column(
-              children: [
-                TextFormField(
-                  keyboardType: TextInputType.number,
-                  initialValue:
-                      textValues[field['name']] ?? '', // Use the stored value
-                  decoration: InputDecoration(
-                    labelText: field['name'],
-                    errorText: showError ? 'This field is required' : null,
-                  ),
-                  onChanged: (value) {
-                    if (field['required'] && (value == null || value.isEmpty)) {
-                      fieldErrors[field['name']] = true;
-                    } else {
-                      fieldErrors[field['name']] = false;
-                    }
-                    textValues[field['name']] = value; // Update textValues
-                    setState(() {});
-                  },
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: saveAndSend,
+        label: const Text('Save & Send'),
+        icon: const Icon(Icons.send),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildField(Map field) {
+    bool showError = fieldErrors[field['name']] ?? false;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(field['name'],
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          if (field['type'] == 'text' || field['type'] == 'number')
+            TextFormField(
+              keyboardType: field['type'] == 'number'
+                  ? TextInputType.number
+                  : TextInputType.text,
+              initialValue: textValues[field['name']] ?? '',
+              decoration: InputDecoration(
+                hintText: field['name'],
+                errorText: showError ? 'Required' : null,
+              ),
+              onChanged: (value) {
+                textValues[field['name']] = value;
+                if (field['required'] == true) {
+                  setState(
+                      () => fieldErrors[field['name']] = (value.isEmpty));
+                } else {
+                  // needed to keep value sync if not required
+                  setState(() {}); 
+                }
+              },
+            )
+          else if (field['type'] == 'radio')
+             Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF2F2F7),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            );
-          } else if (field['type'] == 'text') {
-            return Column(
-              children: [
-                TextFormField(
-                  initialValue:
-                      textValues[field['name']] ?? '', // Use the stored value
-                  decoration: InputDecoration(
-                    labelText: field['name'],
-                    errorText: showError ? 'This field is required' : null,
-                  ),
-                  onChanged: (value) {
-                    if (field['required'] && (value == null || value.isEmpty)) {
-                      fieldErrors[field['name']] = true;
-                    } else {
-                      fieldErrors[field['name']] = false;
-                    }
-                    textValues[field['name']] = value; // Update textValues
-                    setState(() {});
-                  },
-                ),
-              ],
-            );
-          } else if (field['type'] == 'radio') {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  field['name'],
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                ...field['choices'].map<Widget>((choice) {
-                  return ListTile(
-                    title: Text(choice),
-                    leading: Radio<String>(
+                child: Column(
+                  children: (field['choices'] as List).map<Widget>((choice) {
+                    return RadioListTile<String>(
+                      title: Text(choice),
                       value: choice,
+                      activeColor: Theme.of(context).primaryColor,
                       groupValue: radioValues[field['name']],
                       onChanged: (String? value) {
                         if (value != null) {
@@ -200,25 +215,21 @@ class _PitScoutingState extends State<PitScoutingPage> {
                           });
                         }
                       },
-                    ),
-                  );
-                }).toList(),
-                showError
-                    ? Text('This field is required',
-                        style: TextStyle(color: Colors.red))
-                    : SizedBox.shrink(),
-              ],
-            );
-          } else {
-            return SizedBox
-                .shrink(); // Return an empty widget for unsupported field types
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: saveAndSend,
-        label: Text('Save & Send'),
-        icon: Icon(Icons.send),
+                    );
+                  }).toList(),
+                ),
+              ),
+          if (showError && field['type'] == 'radio')
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, left: 12),
+              child: Text(
+                'Selection required',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,0 +1,55 @@
+{
+  "Pit": [
+    {
+      "name": "Scout name",
+      "required": true,
+      "type": "text"
+    },
+    {
+      "name": "Team number",
+      "required": false,
+      "type": "number"
+    },
+    {
+      "name": "Drivetrain type",
+      "choices": ["Mecanum", "Tank", "Swerve", "Other"],
+      "required": false,
+      "type": "radio"
+    },
+    {
+      "name": "Other drivetrain",
+      "required": false,
+      "type": "text"
+    },
+    {
+      "name": "Where can you pick up from?",
+      "required": false,
+      "type": "text"
+    },
+    {
+      "name": "Autos",
+      "required": false,
+      "type": "text"
+    },
+    {
+      "name": "How many can you score per match?",
+      "required": false,
+      "type": "text"
+    },
+    {
+      "name": "Can you sort artifacts into the motif?",
+      "required": false,
+      "type": "text"
+    },
+    {
+      "name": "Endgame: Can they park (especially double)?",
+      "required": false,
+      "type": "text"
+    },
+    {
+      "name": "Other comments",
+      "required": false,
+      "type": "text"
+    }
+  ]
+}

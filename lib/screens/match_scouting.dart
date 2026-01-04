@@ -17,6 +17,11 @@ class MatchScoutingPage extends StatefulWidget {
 }
 
 class _MatchScoutingState extends State<MatchScoutingPage> {
+  // ... [KEEP ALL YOUR EXISTING VARIABLE DECLARATIONS AND LOGIC METHODS HERE]
+  // ... [Map data = {}; etc...]
+  // ... [readJson(), addBoolValue(), etc...]
+  // ... [Only Copy/Paste logic methods, do not change them]
+
   Map data = {};
   Map<String, String> textValues = {};
   Map<String, String> radioControllers = {};
@@ -41,14 +46,6 @@ class _MatchScoutingState extends State<MatchScoutingPage> {
       data = decodedData;
     });
   }
-
-  /*
-  void addController(String name) {
-    if (!textValues.keys.contains(name)) {
-      textValues[name] = "";
-    }
-  }
-  */
 
   void addBoolValue(String name) {
     if (!boolValues.keys.contains(name)) {
@@ -171,8 +168,7 @@ class _MatchScoutingState extends State<MatchScoutingPage> {
             content: Text(
                 'Please fill out all the required fields before sending.')),
       );
-      setState(
-          () {}); // Trigger a rebuild to show error messages, feel free to refactor if there is a better way
+      setState(() {});
       return;
     }
 
@@ -187,7 +183,6 @@ class _MatchScoutingState extends State<MatchScoutingPage> {
               child: const Text('Prepare to send!'),
               onPressed: () {
                 Navigator.of(context).pop();
-                // redirect to `send_data.dart` and pass the data
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -199,7 +194,7 @@ class _MatchScoutingState extends State<MatchScoutingPage> {
               },
             ),
             TextButton(
-              child: const Text('No, not yet'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -210,442 +205,272 @@ class _MatchScoutingState extends State<MatchScoutingPage> {
     );
   }
 
+  // --- UI STARTS HERE ---
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title, style: const TextStyle(color: Colors.black)),
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: saveAndSend,
         label: const Text('Save & Send'),
         icon: const Icon(Icons.send),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
       ),
-      body: data.isEmpty
-          ? Center(
-              child: Column(
-              children: <Widget>[
-                const Padding(
-                  padding: EdgeInsets.all(5),
-                ),
-                const Text("We didn't find anything...",
-                    style: TextStyle(fontSize: 18))
-              ],
-            ))
-          : ListView.builder(
-              itemCount: data.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Column(children: [
-                    const Padding(padding: EdgeInsets.all(5)),
-                    const Text(
-                      "Match Timer",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar.medium(
+            title: Text(widget.title),
+            actions: [
+              // Tiny timer indicator in app bar if scrolling
+              if (_timer != null)
+                Center(
+                    child: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Text(
+                    "${(_start / 60).floor()}:${(_start % 60).toString().padLeft(2, '0')}",
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                        fontSize: 16),
+                  ),
+                ))
+            ],
+          ),
+          if (data.isEmpty)
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  if (index == 0) return _buildTimerSection();
+
+                  // Adjusted index for data entries
+                  final sectionTitle = data.keys.toList()[index - 1].toString();
+                  final sectionItems = data.values.toList()[index - 1];
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: Theme(
+                        data: Theme.of(context)
+                            .copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          initiallyExpanded: true,
+                          title: Text(
+                            sectionTitle,
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                children: List.generate(sectionItems.length,
+                                    (itemIndex) {
+                                  return _buildFormItem(
+                                      sectionItems[itemIndex]);
+                                }),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
                     ),
-                    const Padding(padding: EdgeInsets.all(2)),
-                    if (_start >= 60) ...[
-                      Text(
-                          "${(_start / 60).floor()}:${(_start % 60).toString().padLeft(2, '0')}",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18)),
-                    ],
-                    if (_start <= 59) ...[
-                      Text("$_start",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18)),
-                    ],
-                    const Padding(padding: EdgeInsets.all(2)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        if (_timer == null) ...[
-                          ElevatedButton(
-                            onPressed: () {
-                              startTimer();
-                            },
-                            child: const Text("Start"),
-                          ),
-                          const Padding(padding: EdgeInsets.all(5)),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _start = 150;
-                              });
-                            },
-                            child: const Text("Reset"),
-                          ),
-                        ] else ...[
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                if (_timer != null) {
-                                  _timer!.cancel();
-                                  _timer = null;
-                                }
-                              });
-                            },
-                            child: const Text("Pause"),
-                          ),
-                          const Padding(padding: EdgeInsets.all(5)),
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                if (_timer != null) {
-                                  _start = 150;
-                                  _timer!.cancel();
-                                  _timer = null;
-                                }
-                              });
-                            },
-                            child: const Text("Reset"),
-                          ),
-                        ]
-                      ],
-                    ),
-                    const Padding(padding: EdgeInsets.all(5)),
-                  ]);
-                }
-                return ExpansionTile(
-                    title: Text(
-                      data.keys.toList()[index - 1].toString(),
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: data.values.toList()[index - 1].length,
-                            itemBuilder: (context2, index2) {
-                              bool showError = fieldErrors[data.values
-                                      .toList()[index - 1][index2]["name"]] ??
-                                  false;
-                              if (data.values.toList()[index - 1][index2]
-                                      ["type"] ==
-                                  "text") {
-                                //addController(data.values.toList()[index - 1][index2]["name"]);
-                                String placeholderText = "";
-                                if (data.values
-                                    .toList()[index - 1][index2]
-                                    .keys
-                                    .contains("defaultValue")) {
-                                  placeholderText =
-                                      data.values.toList()[index - 1][index2]
-                                          ["defaultValue"];
-                                }
-                                return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                          padding: const EdgeInsets.all(5),
-                                          child: Text(
-                                            data.values.toList()[index - 1]
-                                                [index2]["name"],
-                                            style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          )),
-                                      Container(
-                                          padding: const EdgeInsets.all(5),
-                                          child: TextFormField(
-                                            decoration: InputDecoration(
-                                              border:
-                                                  const OutlineInputBorder(),
-                                              hintText: placeholderText,
-                                              errorText: showError
-                                                  ? 'This field is required'
-                                                  : null,
-                                            ),
-                                            initialValue: textValues[
-                                                data.values.toList()[index - 1]
-                                                    [index2]["name"]],
-                                            onChanged: (newString) {
-                                              if (data.values
-                                                          .toList()[index - 1]
-                                                      [index2]['required'] &&
-                                                  (newString == null ||
-                                                      newString.isEmpty)) {
-                                                fieldErrors[data.values
-                                                        .toList()[index - 1]
-                                                    [index2]['name']] = true;
-                                              } else {
-                                                fieldErrors[data.values
-                                                        .toList()[index - 1]
-                                                    [index2]['name']] = false;
-                                              }
-                                              setState(() {
-                                                textValues[data.values
-                                                            .toList()[index - 1]
-                                                        [index2]["name"]] =
-                                                    newString;
-                                              });
-                                            },
-                                          )),
-                                      const Padding(padding: EdgeInsets.all(10))
-                                    ]);
-                              } else if (data.values.toList()[index - 1][index2]
-                                      ["type"] ==
-                                  "radio") {
-                                addRadioController(
-                                    data.values.toList()[index - 1][index2]
-                                        ["name"],
-                                    data.values.toList()[index - 1][index2]
-                                        ["choices"][0]);
-                                return ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: data.values
-                                          .toList()[index - 1][index2]
-                                              ["choices"]
-                                          .length +
-                                      2,
-                                  itemBuilder: (content3, index3) {
-                                    if (index3 == 0) {
-                                      return Padding(
-                                          padding: const EdgeInsets.all(5),
-                                          child: Text(
-                                              data.values.toList()[index - 1]
-                                                  [index2]["name"],
-                                              style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight:
-                                                      FontWeight.bold)));
-                                    } else if (index3 > 0 &&
-                                        index3 <
-                                            data.values
-                                                    .toList()[index - 1][index2]
-                                                        ["choices"]
-                                                    .length +
-                                                1) {
-                                      return RadioListTile<String>(
-                                        title: Text(data.values
-                                                .toList()[index - 1][index2]
-                                            ["choices"][index3 - 1]),
-                                        value: data.values.toList()[index - 1]
-                                            [index2]["choices"][index3 - 1],
-                                        groupValue: radioControllers[
-                                            data.values.toList()[index - 1]
-                                                [index2]["name"]],
-                                        onChanged: (String? value) {
-                                          setState(() {
-                                            if (value != null) {
-                                              radioControllers[data.values
-                                                      .toList()[index - 1]
-                                                  [index2]["name"]] = value;
-                                            }
-                                          });
-                                        },
-                                      );
-                                    } else {
-                                      return const Padding(
-                                        padding: EdgeInsets.all(10),
-                                      );
-                                    }
-                                  },
-                                );
-                              } else if (data.values.toList()[index - 1][index2]
-                                      ["type"] ==
-                                  "number") {
-                                //(data.values.toList()[index - 1][index2]["name"]);
-                                String placeholderText = "";
-                                if (data.values
-                                    .toList()[index - 1][index2]
-                                    .keys
-                                    .contains("defaultValue")) {
-                                  placeholderText =
-                                      data.values.toList()[index - 1][index2]
-                                          ["defaultValue"];
-                                }
-                                return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                          padding: const EdgeInsets.all(5),
-                                          child: Text(
-                                            data.values.toList()[index - 1]
-                                                [index2]["name"],
-                                            style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          )),
-                                      Container(
-                                          padding: const EdgeInsets.all(5),
-                                          child: TextFormField(
-                                            decoration: InputDecoration(
-                                              border:
-                                                  const OutlineInputBorder(),
-                                              hintText: placeholderText,
-                                              errorText: showError
-                                                  ? 'This field is required'
-                                                  : null,
-                                            ),
-                                            //keyboardType: TextInputType.number,
-                                            inputFormatters: [
-                                              FilteringTextInputFormatter
-                                                  .digitsOnly
-                                            ],
-                                            initialValue: textValues[
-                                                data.values.toList()[index - 1]
-                                                    [index2]["name"]],
-                                            onChanged: (newString) {
-                                              if (data.values
-                                                          .toList()[index - 1]
-                                                      [index2]['required'] &&
-                                                  (newString == null ||
-                                                      newString.isEmpty)) {
-                                                fieldErrors[data.values
-                                                        .toList()[index - 1]
-                                                    [index2]['name']] = true;
-                                              } else {
-                                                fieldErrors[data.values
-                                                        .toList()[index - 1]
-                                                    [index2]['name']] = false;
-                                              }
-                                              setState(() {
-                                                textValues[data.values
-                                                            .toList()[index - 1]
-                                                        [index2]["name"]] =
-                                                    newString;
-                                              });
-                                            },
-                                          )),
-                                      const Padding(padding: EdgeInsets.all(10))
-                                    ]);
-                              } else if (data.values.toList()[index - 1][index2]
-                                      ["type"] ==
-                                  "bool") {
-                                addBoolValue(data.values.toList()[index - 1]
-                                    [index2]["name"]);
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Container(
-                                        padding: const EdgeInsets.all(5),
-                                        child: Text(
-                                          data.values.toList()[index - 1]
-                                              [index2]["name"],
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold),
-                                        )),
-                                    Row(children: <Widget>[
-                                      Checkbox(
-                                        value: boolValues[
-                                            data.values.toList()[index - 1]
-                                                [index2]["name"]],
-                                        onChanged: (bool? value) {
-                                          setState(() {
-                                            if (value != null) {
-                                              boolValues[data.values
-                                                      .toList()[index - 1]
-                                                  [index2]["name"]] = value;
-                                            }
-                                          });
-                                        },
-                                      ),
-                                      const Padding(padding: EdgeInsets.all(5)),
-                                      Text(
-                                        boolValues[data.values
-                                                        .toList()[index - 1]
-                                                    [index2]["name"]] ??
-                                                false
-                                            ? "Current value: Yes"
-                                            : "Current value: No",
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                        ),
-                                      )
-                                    ]),
-                                    const Padding(padding: EdgeInsets.all(10))
-                                  ],
-                                );
-                              } else if (data.values.toList()[index - 1][index2]
-                                      ["type"] ==
-                                  "counter") {
-                                addCounter(data.values.toList()[index - 1]
-                                    [index2]["name"]);
-                                return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      Padding(
-                                          padding: const EdgeInsets.all(5),
-                                          child: Text(
-                                            data.values.toList()[index - 1]
-                                                [index2]["name"],
-                                            style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold),
-                                          )),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MediaQuery.of(context).size.width >
-                                                    700
-                                                ? MainAxisAlignment.start
-                                                : MainAxisAlignment.center,
-                                        children: <Widget>[
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                decrementCounter(data.values
-                                                        .toList()[index - 1]
-                                                    [index2]["name"]);
-                                              });
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              shape: const CircleBorder(),
-                                            ),
-                                            child: const Text("-",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 24)),
-                                          ),
-                                          const Padding(
-                                              padding: EdgeInsets.all(5)),
-                                          Text(
-                                              counterValues[data.values
-                                                          .toList()[index - 1]
-                                                      [index2]["name"]]
-                                                  .toString(),
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 24)),
-                                          const Padding(
-                                              padding: EdgeInsets.all(5)),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                incrementCounter(data.values
-                                                        .toList()[index - 1]
-                                                    [index2]["name"]);
-                                              });
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              shape: const CircleBorder(),
-                                            ),
-                                            child: const Text("+",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 24)),
-                                          ),
-                                        ],
-                                      ),
-                                      const Padding(padding: EdgeInsets.all(10))
-                                    ]);
-                              }
-                              return const Text("Failed to create widget");
-                            }),
-                      )
-                    ]);
-              },
+                  );
+                },
+                childCount: data.length + 1,
+              ),
             ),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 80))
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimerSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Text("Match Timer",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text(
+              "${(_start / 60).floor()}:${(_start % 60).toString().padLeft(2, '0')}",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 48,
+                fontFeatures: [const FontFeature.tabularFigures()],
+                color: _start <= 10 ? Colors.red : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                ElevatedButton.icon(
+                  onPressed: _timer == null
+                      ? startTimer
+                      : () {
+                          setState(() {
+                            if (_timer != null) {
+                              _timer!.cancel();
+                              _timer = null;
+                            }
+                          });
+                        },
+                  icon: Icon(_timer == null ? Icons.play_arrow : Icons.pause),
+                  label: Text(_timer == null ? "Start" : "Pause"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        _timer == null ? Colors.green : Colors.orange,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      if (_timer != null) {
+                        _timer!.cancel();
+                        _timer = null;
+                      }
+                      _start = 150;
+                    });
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text("Reset"),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormItem(Map item) {
+    String type = item['type'];
+    String name = item['name'];
+    bool showError = fieldErrors[name] ?? false;
+
+    // Spacing wrapper
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (type != "bool") ...[
+            Text(name,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 8),
+          ],
+
+          // Render Logic
+          if (type == 'text' || type == 'number')
+            TextFormField(
+              keyboardType:
+                  type == 'number' ? TextInputType.number : TextInputType.text,
+              inputFormatters: type == 'number'
+                  ? [FilteringTextInputFormatter.digitsOnly]
+                  : [],
+              initialValue: textValues[name],
+              decoration: InputDecoration(
+                hintText: item['defaultValue'] ?? '',
+                errorText: showError ? 'Required' : null,
+              ),
+              onChanged: (val) {
+                setState(() => textValues[name] = val);
+                if (item['required'] == true) {
+                  setState(() => fieldErrors[name] = val.isEmpty);
+                }
+              },
+            )
+          else if (type == 'radio')
+            _buildRadioGroup(item)
+          else if (type == 'bool')
+            _buildSwitch(item)
+          else if (type == 'counter')
+            _buildCounter(item)
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRadioGroup(Map item) {
+    String name = item['name'];
+    List choices = item['choices'];
+    addRadioController(name, choices[0]);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: List.generate(choices.length, (index) {
+          return RadioListTile<String>(
+            title: Text(choices[index]),
+            value: choices[index],
+            activeColor: Theme.of(context).primaryColor,
+            groupValue: radioControllers[name],
+            onChanged: (val) => setState(() => radioControllers[name] = val!),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildSwitch(Map item) {
+    String name = item['name'];
+    addBoolValue(name);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(name,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        Switch.adaptive(
+          value: boolValues[name] ?? false,
+          activeColor: Theme.of(context).primaryColor,
+          onChanged: (val) => setState(() => boolValues[name] = val),
+        )
+      ],
+    );
+  }
+
+  Widget _buildCounter(Map item) {
+    String name = item['name'];
+    addCounter(name);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            onPressed: () => setState(() => decrementCounter(name)),
+            icon: const Icon(Icons.remove_circle_outline, size: 32),
+            color: Colors.red,
+          ),
+          Text(
+            (counterValues[name] ?? 0).toString(),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          IconButton(
+            onPressed: () => setState(() => incrementCounter(name)),
+            icon: const Icon(Icons.add_circle, size: 32),
+            color: Colors.green,
+          ),
+        ],
+      ),
     );
   }
 }
