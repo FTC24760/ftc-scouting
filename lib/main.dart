@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:ftc_scouting/screens/start.dart';
 
 const CURRENT_YEAR = 2025;
-const API_ENDPOINT = "https://ryanidkproductions.com/api/mergedata";
+const API_ENDPOINT = "https://api.scuolarobotics.ca/api/senddata";
 
 void main() {
   // Ensure the status bar looks good on modern devices

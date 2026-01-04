@@ -124,12 +124,27 @@ class _StartState extends State<StartPage> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
-            title: Text(widget.title),
+          SliverAppBar(
+            pinned: true, // Keeps the small bar visible when scrolling down
+            expandedHeight: 180.0, // Make this larger for a taller header
+            backgroundColor: const Color(0xFFF2F2F7),
+            flexibleSpace: FlexibleSpaceBar(
+              centerTitle: false, // iOS titles are left-aligned
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              expandedTitleScale: 2.5, // Determines how big the text grows (Default is ~1.5)
+              title: Text(
+                widget.title,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 12, // This is the "Small" size when scrolled up
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
             actions: [
               IconButton(
                 onPressed: promptForApiKey,
-                icon: const Icon(Icons.settings),
+                icon: const Icon(Icons.settings, color: Colors.black),
               ),
             ],
           ),

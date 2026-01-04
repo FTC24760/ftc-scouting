@@ -63,10 +63,15 @@ class _PitScoutingState extends State<PitScoutingPage> {
 
   void saveAndSend() {
     if (!validateRequiredFields()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Please fill out all required fields before saving.')),
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text("Missing Fields"),
+          content: const Text("Please fill out all required fields."),
+          actions: [
+            TextButton(child: const Text("OK"), onPressed: () => Navigator.of(ctx).pop()),
+          ],
+        ),
       );
       setState(() {});
       return;
@@ -180,7 +185,6 @@ class _PitScoutingState extends State<PitScoutingPage> {
                   : TextInputType.text,
               initialValue: textValues[field['name']] ?? '',
               decoration: InputDecoration(
-                hintText: field['name'],
                 errorText: showError ? 'Required' : null,
               ),
               onChanged: (value) {

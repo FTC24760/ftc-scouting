@@ -163,10 +163,15 @@ class _MatchScoutingState extends State<MatchScoutingPage> {
 
   void saveAndSend() {
     if (!validateRequiredFields()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Please fill out all the required fields before sending.')),
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text("Missing Fields"),
+          content: const Text("Please fill out all the required fields (marked in red) before sending."),
+          actions: [
+            TextButton(child: const Text("OK"), onPressed: () => Navigator.of(ctx).pop()),
+          ],
+        ),
       );
       setState(() {});
       return;
@@ -429,17 +434,26 @@ class _MatchScoutingState extends State<MatchScoutingPage> {
   Widget _buildSwitch(Map item) {
     String name = item['name'];
     addBoolValue(name);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(name,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-        Switch.adaptive(
-          value: boolValues[name] ?? false,
-          activeColor: Theme.of(context).primaryColor,
-          onChanged: (val) => setState(() => boolValues[name] = val),
-        )
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0), // Added vertical padding for better touch targets
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // WRAP TEXT IN EXPANDED TO PREVENT OVERFLOW
+          Expanded(
+            child: Text(
+              name,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ),
+          const SizedBox(width: 12), // Add some space between text and switch
+          Switch.adaptive(
+            value: boolValues[name] ?? false,
+            activeColor: Theme.of(context).primaryColor,
+            onChanged: (val) => setState(() => boolValues[name] = val),
+          )
+        ],
+      ),
     );
   }
 
