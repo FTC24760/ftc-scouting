@@ -1,0 +1,151 @@
+{
+  "PreMatch": [
+    {
+      "name": "Scouter Name",
+      "required": true,
+      "type": "text"
+    },
+    {
+      "name": "Team #",
+      "required": true,
+      "type": "number"
+    },
+    {
+      "name": "Match #",
+      "required": true,
+      "type": "number"
+    },
+    {
+        "name": "Starting Postition",
+        "choices": ["At left corner", "At right corner", "At far wall", "At left wall", "At right wall", "N/A"],
+        "required": false,
+        "type": "radio"
+    }
+  ],
+  "Autonomous": [
+    {
+      "name": "Moved",
+      "type": "bool"
+    },
+    {
+      "name": "Auto Pollen Taken In",
+      "type": "counter"
+    },
+    {
+      "name": "Auto Nectar Taken In",
+      "type": "counter"
+    },
+    {
+      "name": "Auto Successfully Shot Pollen",
+      "type": "counter"
+    },
+    {
+      "name": "Auto Shot Nectar",
+      "type": "counter"
+    },
+    {
+      "name": "Auto Missed Shot Pollen",
+      "type": "counter"
+    },
+        {
+      "name": "Auto Missed Shot Nectar",
+      "type": "counter"
+    },
+    {
+      "name": "Number of Flowers Interacted With",
+      "type": "counter"
+    },
+     {
+      "name": "Number of Pollen Entered Into Flower",
+      "type": "counter"
+    },
+    {
+      "name": "Number of Nectar Entered Into Flower",
+      "type": "counter"
+    },
+    {
+      "name": "Number of Hive Tips",
+      "type": "counter"
+    },
+    {
+      "name": "Comments on Auto",
+      "type": "text"
+    }
+  ],
+  "TeleOp": [
+    {
+      "name": "Pollen Taken In",
+      "type": "counter"
+    },
+    {
+      "name": "Pollen Shot Successfully",
+      "type": "counter"
+    },
+    {
+      "name": "Pollen Shot Missed",
+      "type": "counter"
+    },
+        {
+      "name": "Nectar Taken In",
+      "type": "counter"
+    },
+    {
+      "name": "Nectar Shot Successfully",
+      "type": "counter"
+    },
+    {
+      "name": "Nectar Shot Missed",
+      "type": "counter"
+    },
+    {
+      "name": "Number of Flowers Interacted With",
+      "type": "counter"
+    },
+    {
+      "name": "Number of Pollen Entered Into Flower",
+      "type": "counter"
+    },
+    {
+      "name": "Number of Nectar Entered Into Flower",
+      "type": "counter"
+    },
+    {
+      "name": "Number of Hive Tips",
+      "type": "counter"
+    },
+    {
+      "name": "Do They Have a Flower Mechanism?",
+      "type": "bool"
+    }
+  ],
+  "EndGame": [
+    {
+      "name": "Ending Position",
+      "type": "radio",
+      "required": false,
+      "choices": ["Alliance Loading Zone", "Other Alliance Zone", "Other"]
+    }
+  ],
+  "PostMatch": [
+    {
+      "name": "Picked up from",
+      "type": "radio",
+      "required": true,
+      "choices": ["Ground", "Human Player", "Both"]
+    },
+    {
+      "name": "Did they die or tip over during the match?",
+      "type": "bool"
+    },
+    {
+      "name": "Penalties (if any)",
+      "type": "text",
+      "required": false
+    },
+        {
+      "name": "Final Comments",
+      "type": "text",
+      "required": false
+    }
+  ]
+}

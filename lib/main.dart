@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ftc_scouting/screens/start.dart';
 
-const CURRENT_YEAR = 2025;
+const CURRENT_YEAR = 2026;
 const API_ENDPOINT = "https://api.scuolarobotics.ca/api/senddata";
 
 void main() {
